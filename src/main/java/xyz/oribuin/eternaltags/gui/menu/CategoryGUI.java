@@ -7,7 +7,9 @@ import dev.triumphteam.gui.components.ScrollType;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.PaginatedGui;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class CategoryGUI extends PluginMenu {
 
@@ -100,7 +103,12 @@ public class CategoryGUI extends PluginMenu {
         MenuItem.create(this.config)
                 .path("favorite-tags")
                 .player(player)
-                .action(event -> MenuProvider.get(FavouritesGUI.class).open(player))
+                .action(event -> {
+                    Player viewer = (Player) event.getClickedInventory().getViewers().stream().findFirst().orElse(null);
+                    if (viewer == null) return;
+
+                    MenuProvider.get(FavouritesGUI.class).open(viewer);
+                })
                 .place(gui);
 
         MenuItem.create(this.config)
@@ -163,13 +171,16 @@ public class CategoryGUI extends PluginMenu {
         this.getCategories(player).forEach(category -> {
 
             final GuiAction<InventoryClickEvent> action = event -> {
+                Player viewer = (Player) event.getClickedInventory().getViewers().stream().findFirst().orElse(null);
+                if (viewer == null) return;
+
                 // Filter out tags that are not in the category.
                 if (category.isGlobal()) {
-                    tagsGUI.open(player);
+                    tagsGUI.open(viewer);
                     return;
                 }
 
-                tagsGUI.open(player, tag -> tag.getCategory() != null && tag.getCategory().equalsIgnoreCase(category.getId()));
+                tagsGUI.open(viewer, tag -> tag.getCategory() != null && tag.getCategory().equalsIgnoreCase(category.getId()));
             };
 
             if (Setting.CACHE_GUI_CATEGORIES.getBoolean() && this.categoryIcons.containsKey(category)) {
